@@ -240,7 +240,7 @@ my_fold_counts <- c(2, 5, 10, 20, -1) # -1 = LOOCV
 #' @param dataset the data set to use
 #' @param nsamples how large the training set should be
 #' @param times how many times to train and test the models, default 500
-#' @param fold_counts folds to use, with a -1 meaning leave-one-out
+#' @param folds number of folds to use, with a -1 meaning leave-one-out
 #' @param models the models to train
 #' @param seed random seed
 #' @return a matrix of accuracies, where each row corresponds to a model
@@ -267,7 +267,9 @@ cv_experiment <-
         class1_subset <- sample(which(class1), nclass1)
         class2_subset <- sample(which(class2), nclass2)
         d_subset <- dataset[c(class1_subset, class2_subset), ]
-        cv <- vfold_cv(d_subset, folds, strata = "class")
+        cv <-
+          # We suppress the warning about pool = 0
+          suppressWarnings(vfold_cv(d_subset, folds, strata = class, pool = 0))
       } else {
         d_subset <- dataset[sample(1:nrow(dataset), nsamples), ]
         cv <- vfold_cv(d_subset, folds)
@@ -320,7 +322,7 @@ run_accuracy_estimation <- function(datasets = my_dataset_list,
                                              times = times, seed = seed))
       save_data(results, fname)
     } else {
-      cat("Dataset `", base, "` has saved RData file, skipping\n", sep = "")
+      cat("Dataset `", name, "` has saved RData file, skipping\n", sep = "")
     }
   }
 }
@@ -332,31 +334,32 @@ run_cv_experiments <-
   function(datasets = my_dataset_list,
            fold_counts = my_fold_counts,
            times = 50, seed = 2021) {
-  for (i in seq_along(datasets)) {
-    name <- datasets[[i]]$name
-    tib  <- datasets[[i]]$tibble
-    size <- datasets[[i]]$sample_size
-    for (j in seq_along(fold_counts)) {
-      k <- fold_counts[[j]]
-      if (k == -1) k <- size
-      base  <- paste("cv", name, k, times, seed, sep = "_")
-      fname <- paste0(base, ".RData")
-      path  <- savepath(fname)
-      if (!readable(path)) {
-        cat("Testing dataset `", name, "` with ", k, " folds ...\n", sep = "")
-        results <-
-          suppressWarnings(cv_experiment(base, tib, size,
-                                         times = times,
-                                         folds = k,
-                                         seed  = seed))
-        save_data(results, fname)
-      } else {
-        cat("Dataset `", base, "` with ", k,
-            " folds has saved RData file, skipping\n", sep = "")
+    if (is.atomic(datasets)) datasets <- list(datasets)
+    for (i in seq_along(datasets)) {
+      name <- datasets[[i]]$name
+      tib  <- datasets[[i]]$tibble
+      size <- datasets[[i]]$sample_size
+      for (j in seq_along(fold_counts)) {
+        k <- fold_counts[[j]]
+        if (k == -1) k <- size
+        base  <- paste("cv", name, k, times, seed, sep = "_")
+        fname <- paste0(base, ".RData")
+        path  <- savepath(fname)
+        if (!readable(path)) {
+          cat("Testing dataset `", name, "` with ", k, " folds ...\n", sep = "")
+          results <-
+            suppressWarnings(cv_experiment(base, tib, size,
+                                           times = times,
+                                           folds = k,
+                                           seed  = seed))
+          save_data(results, fname)
+        } else {
+          cat("Dataset `", base, "` with ", k,
+              " folds has saved RData file, skipping\n", sep = "")
+        }
       }
     }
   }
-}
 
 ## Plan for hypothesis stability:
 ## 1. Take a sample of the data.
