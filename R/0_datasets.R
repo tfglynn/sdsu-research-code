@@ -73,59 +73,6 @@ mushroom_dataset <-
   rename(class = edible) %>%
   select(-veil_type) # only one factor
 
-commonest <- function(x) x[[which.max(tabulate(x))]]
-
-#' Soybean (large) data set
-#' @export
-soybean_dataset <-
-  read_csv(datapath("soybean large/soybean-large.data"),
-           na = "?",
-           col_types = cols(),
-           col_names = c("class", "date", "plant_stand", "precip", "temp",
-                         "hail", "crop_hist", "area_damaged", "severity",
-                         "seed_tmt", "germination", "plant_growth", "leaves",
-                         "leafspots_halo", "leafspots_marg", "leafspot_size",
-                         "leaf_shread", "leaf_malf", "leaf_mild", "stem",
-                         "lodging", "stem_cankers", "canker_lesion",
-                         "fruiting_bodies", "external_decay", "mycelium",
-                         "int_discolor", "sclerotia", "fruit_pods",
-                         "fruit_spots", "seed", "mold_growth", "seed_discolor",
-                         "seed_size", "shriveling", "roots")) %>%
-  mutate(across(everything(), factor),
-         across(everything(), . %>% replace_na(., commonest(.))))
-
-#' Vehicle silhouettes data set
-#' @export
-# The data files have trailing spaces that cause `read_delim` to emit warnings.
-# To prevent this, we strip the spaces first.
-vehicle_dataset <-
-  list.files(datapath("vehicle/"),
-             pattern = "dat$",
-             full.names = TRUE) %>%
-  lapply(. %>%
-         readLines %>%
-         trimws(which = "right") %>%
-         paste(sep = "\n") %>%
-         I %>%
-         read_delim(delim = " ",
-                    col_types = cols(),
-                    col_names = c("compactness", "circularity",
-                                  "distance_circularity", "radius_ratio",
-                                  "axis_aspect_ratio", "length_aspect_ratio",
-                                  "scatter_ratio", "elongatedness",
-                                  "axis_rectangularity",
-                                  "length_rectangularity",
-                                  "scaled_variance_along_major_axis",
-                                  "scaled_variance_along_minor_axis",
-                                  "scaled_radius_of_gyration",
-                                  "skewness_about_major_axis",
-                                  "skewness_about_minor_axis",
-                                  "kurtosis_about_minor_axis",
-                                  "kurtosis_about_major_axis", "hollows_ratio",
-                                  "class"))) %>%
-  bind_rows %>%
-  mutate(class = factor(class))
-
 #' Data sets used in the Kohavi replication experiments
 #' @export
 my_dataset_list <-
@@ -140,13 +87,7 @@ my_dataset_list <-
             sample_size = 200),
        list(name = "mushroom",
             tibble = mushroom_dataset,
-            sample_size = 200),
-       list(name = "soybean",
-            tibble = soybean_dataset,
-            sample_size = 100),
-       list(name = "vehicle",
-            tibble = vehicle_dataset,
-            sample_size = 100))
+            sample_size = 200))
 
 #' @export
 readable <- function(fname) {

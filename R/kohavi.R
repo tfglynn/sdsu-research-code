@@ -153,30 +153,21 @@ nearest_neighbor_accuracy <- function(name, tib, train, test) {
 
 #' Models used in the Kohavi replication experiments
 #' @export
-# NOTE: We only run logistic_reg on the binary classification problems,
-# i.e. not soybean and vehicle.
 my_model_list <-
   list(list(name = "c4.5",
-            fn = c4.5_accuracy,
-            multiclass = TRUE),
+            fn = c4.5_accuracy),
        list(name = "naive_bayes",
-            fn = naive_bayes_accuracy,
-            multiclass = TRUE),
+            fn = naive_bayes_accuracy),
        list(name = "rand_forest",
-            fn = rand_forest_accuracy,
-            multiclass = TRUE),
+            fn = rand_forest_accuracy),
        list(name = "boost_tree",
-            fn = boost_tree_accuracy,
-            multiclass = TRUE),
+            fn = boost_tree_accuracy),
        list(name = "svm",
-            fn = svm_accuracy,
-            multiclass = TRUE),
+            fn = svm_accuracy),
        list(name = "logistic_reg",
-            fn = logistic_reg_accuracy,
-            multiclass = FALSE),
+            fn = logistic_reg_accuracy),
        list(name = "nearest_neighbor",
-            fn = nearest_neighbor_accuracy,
-            multiclass = TRUE))
+            fn = nearest_neighbor_accuracy))
 
 ###################################################
 # "True" accuracy estimation
@@ -354,7 +345,7 @@ run_cv_experiments <-
                                            seed  = seed))
           save_data(results, fname)
         } else {
-          cat("Dataset `", base, "` with ", k,
+          cat("Dataset `", name, "` with ", k,
               " folds has saved RData file, skipping\n", sep = "")
         }
       }
