@@ -94,12 +94,9 @@ accuracy <- function(model, test) {
   mean(predictions == test$class)
 }
 
-run_bic_experiment <- function(reps = 100, seed = 2021) {
-  binary_classification <- function(set) length(levels(set$tibble$class)) == 2
-  binary_class_task <- sapply(my_dataset_list, binary_classification)
-  datasets <- my_dataset_list[which(binary_class_task)]
-  bar <- new_bar(reps * length(datasets))
-
+run_bic_experiment <- function(datasets = my_dataset_list,
+                               reps = 50, seed = 2021) {
+  if (is.atomic(datasets)) datasets <- list(datasets)
   results <-
     replicate(length(datasets),
               tibble(# How do BIC and BICc rank the "best" (accuracy) model?
@@ -117,6 +114,15 @@ run_bic_experiment <- function(reps = 100, seed = 2021) {
 
   set.seed(seed)
   for (i in seq_along(datasets)) {
+    name <- datasets[[i]]$name
+    fname <- paste0("bic", "_", name, "_", reps, "_", seed, ".RData")
+    if (readable(savepath(fname))) {
+      cat("Dataset `", name, "` has saved BIC RData file, skipping\n", sep = "")
+      next
+    } else {
+      cat("Testing dataset `", name, "` ...\n")
+    }
+    bar <- new_bar(reps)
     tib <- datasets[[i]]$tibble
     rec <-
       recipe(class ~ ., tib) %>%
@@ -186,7 +192,8 @@ run_bic_experiment <- function(reps = 100, seed = 2021) {
       }
       tick(bar)
     }
+    save_data(results, fname)
+    cat("\nDone!\n")
   }
-
   results
 }
