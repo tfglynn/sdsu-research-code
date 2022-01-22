@@ -1,5 +1,5 @@
 ##################################################
-### Loading datasets ###
+# UCI datasets
 ##################################################
 
 datapath <- function(p) here::here("data", p)
@@ -89,11 +89,13 @@ my_dataset_list <-
             tibble = mushroom_dataset,
             sample_size = 200))
 
+#' Check if a file can be read
 #' @export
 readable <- function(fname) {
   unname(file.access(fname, mode = 4) == 0)
 }
 
+#' Get the appropriate path to save R data
 #' @export
 savepath <- function(p) {
   if (missing(p)) {
@@ -103,13 +105,67 @@ savepath <- function(p) {
   }
 }
 
+#' Save R data to the right directory
 #' @export
 save_data <- function(obj, fname) {
   ensure_dir_exists(savepath())
   saveRDS(obj, savepath(fname))
 }
 
+#' Read R data from the right directory
 #' @export
 read_saved_data <- function(fname) {
   readRDS(savepath(fname))
 }
+
+##################################################
+# Simulated datasets
+##################################################
+
+distance <- function(xs, ys = rep(0, length(xs))) sqrt(sum((xs - ys) ^ 2))
+
+#' Simulate a dataset (type 1)
+#'
+#' These datasets have two classes, which are arranged in concentric shells.
+#' Half of the columns are useless (no relationship with class).
+#'
+#' @export
+simulate_data_type_1 <- function(n, d = 1, bayes_error = 0.1) {
+  useful  <- matrix(rnorm(n * d), nrow = n)
+  useless <- matrix(rnorm(n * d), nrow = n)
+  dists  <- apply(useful, 1, distance)
+  sines  <- sapply(dists, . %>% { sin(pi * .) })
+  classes <- sines > 0
+  noisy <- which(rbinom(n, 1, bayes_error) == 1)
+  classes[noisy] <- !classes[noisy]
+  coords <- cbind(useful, useless)
+  colnames(coords) <- paste0("X", seq_len(2 * d))
+  tib <- as_tibble(coords, 2)
+  tib$class <- factor(classes)
+  tib
+}
+
+#' Simulate a dataset (type 2)
+#'
+#' These datasets are just like type 1, but have a discrete variable ("bit")
+#' that flips the classes.  For example, if the class would normally be TRUE,
+#' and the bit is 1, then the class is FALSE, and vice versa.
+#'
+#' @export
+simulate_data_type_2 <- function(n, d = 1, bayes_error = 0.1) {
+  useful  <- matrix(rnorm(n * d), nrow = n)
+  useless <- matrix(rnorm(n * d), nrow = n)
+  dists  <- apply(useful, 1, distance)
+  sines  <- sapply(dists, . %>% { sin(pi * .) })
+  bits   <- rbinom(n, 1, 0.5)
+  classes <- if_else(bits == 1, sines > 0, sines <= 0)
+  noisy <- which(rbinom(n, 1, bayes_error) == 1)
+  classes[noisy] <- !classes[noisy]
+  coords <- cbind(useful, useless)
+  colnames(coords) <- paste0("X", seq_len(2 * d))
+  tib <- as_tibble(coords, 2)
+  tib$bit <- bits
+  tib$class <- factor(classes)
+  tib
+}
+

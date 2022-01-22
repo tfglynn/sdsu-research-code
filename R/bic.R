@@ -1,20 +1,9 @@
-##################################################
-# Simulated data
-##################################################
-
-# Here we generate a random plane in R^4 embedded
-# in R^8, use it to generate two classes of points,
-# then use logistic regression to try to recover
-# the original plane.
-# We use BIC and BICc to compare models.
-
-# The idea now is to see how out of order accs[order(BICs)]
-# is, where we want a perfect descending order.
-# We do this by counting inversions.
-# Since we don't have many list items and they're already
-# mostly sorted, we use an algorithm inspired by insertion
-# sort to do the counting.
-
+#' Count order inversions
+#'
+#' This function uses an insertion sort to count the number of transpositions
+#' necessary to sort the list \code{xs}.
+#'
+#' @export
 inversions <- function(xs, decreasing = FALSE) {
   cmp <- ifelse(decreasing, `>=`, `<=`)
   N <- length(xs)
@@ -36,55 +25,9 @@ inversions <- function(xs, decreasing = FALSE) {
   }
   total
 }
-# E.g. inversions(accs[order(BICs)], decreasing = TRUE)
-
-#full_dim <- 30
-#true_dim <- 20
-#train_size <- 100
-#test_size  <- 1000
-#N <- train_size + test_size
-#
-#normalize <- function(x) x / sqrt(sum(x ^ 2))
-#logit_inv <- function(l) exp(l) / (1 + exp(l))
-#
-#plane <-
-#  normalize(c(rnorm(true_dim),
-#              rep(0, full_dim - true_dim)))
-#xs <-
-#  matrix(rnorm(N * full_dim),
-#         dimnames = list(NULL, paste0("x", 1:full_dim)),
-#         ncol = full_dim)
-#inner_products <- xs %*% plane
-#label <- rbinom(N, 1, logit_inv(inner_products))
-#
-#dataset <- cbind(xs, label) %>% as_tibble
-#train <- dataset[1:train_size, ]
-#test  <- dataset[(train_size + 1):N, ]
-
-#models <-
-#  lapply(1:full_dim,
-#         . %>% {
-#           glm(reformulate(head(colnames(xs), .),
-#                           response = label),
-#               data = cbind(xs, label) %>% as_tibble,
-#               family = binomial())
-#         })
-#
-#accuracy <- function(model, test) {
-#  predictions <- predict(model, newdata = test) >= 0
-#  mean(predictions == test$class)
-#}
-#
-#BICcs <-
-#  sapply(models,
-#         . %>% { AIC(., k = log(nobs(.) / (2 * pi))) })
-#BICs <- sapply(models, BIC)
-#accs <- sapply(models, . %>% { accuracy(., test) })
-#list(BICc = inversions(accs[order(BICcs)], decreasing = TRUE),
-#     BIC  = inversions(accs[order(BICs)], decreasing = TRUE))
 
 ###################################################
-# Real data
+# Experiments
 ###################################################
 
 accuracy <- function(model, test) {
@@ -175,17 +118,21 @@ run_bic_experiment <- function(datasets = my_dataset_list,
 
       full  <- suppressWarnings(glm(form, data = train, family = binomial()))
       scope <- list(upper = class ~ ., lower = class ~ 1)
-      mBIC  <- stats::step(full, scope, k = log(nobs(full)), trace = 0)
-      mBICc <- stats::step(full, scope, k = log(nobs(full) / (2 * pi)), trace = 0)
+      mBIC <-
+        stats::step(full, scope, k = log(nobs(full)), trace = 0)
+      mBICc <-
+        stats::step(full, scope, k = log(nobs(full) / (2 * pi)), trace = 0)
 
       different <- !identical(formula(mBIC), formula(mBICc))
       if (different) {
         predBIC <-
-          if_else(predict(mBIC, newdata = test) >= 0, classes[[1]], classes[[2]])
+          if_else(predict(mBIC, newdata = test) >= 0,
+                  classes[[1]], classes[[2]])
         accBIC <- mean(predBIC == test$class)
 
         predBICc <-
-          if_else(predict(mBICc, newdata = test) >= 0, classes[[1]], classes[[2]])
+          if_else(predict(mBICc, newdata = test) >= 0,
+                  classes[[1]], classes[[2]])
         accBICc <- mean(predBICc == test$class)
 
         results[[i]][j, "step_BICc_advantage"] <- accBICc - accBIC

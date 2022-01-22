@@ -1,3 +1,4 @@
+# Analytically determined MSE when the true model is Y = X1 + 2 * X2 + e
 true_mse <- function(fit) {
   coeffs <- fit$coefficients
   beta0 <- coeffs[1]
@@ -11,11 +12,8 @@ true_mse <- function(fit) {
 get_train_size <- function(t) 10 + 10 * (t - 1)
 get_val_size   <- function(t) 70 + 10 * (t - 1)
 
-my_replication <- function(seed, rows = 27, splits = 100, iters = 1000) {
+my_replication <- function(seed = 2021, rows = 27, splits = 100, iters = 1000) {
   # BEWARE!  This takes over 2 hours!
-  # Seed used to generate data for paper: 2021
-  if (missing(seed))
-    stop("You should provide a seed!  (The seed for the paper was 2021.)")
   start <- proc.time()
   results <- tibble(trial = rep(seq_len(rows), each = iters),
                     iter  = rep(seq_len(iters), rows),
