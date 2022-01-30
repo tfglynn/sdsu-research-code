@@ -5,7 +5,7 @@
 \alias{my_dataset_list}
 \title{Data sets used in the Kohavi replication experiments}
 \format{
-An object of class \code{list} of length 6.
+An object of class \code{list} of length 4.
 }
 \usage{
 my_dataset_list
